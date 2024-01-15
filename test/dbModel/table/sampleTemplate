@@ -1,0 +1,68 @@
+const Model = require('../baseDbModel')
+const dateHelper = require('../../Util/dateTime')
+const dbHelper = require('./dbHelper')
+
+class Table extends Model {
+    constructor(row, username) {
+        super('t')
+        if (undefined !== row) {
+
+         
+            this.ts = dateHelper.getTimeStamp()
+            this.createdBy = username
+            this.updatedDate = dateHelper.getDateTimeNowUtc("YYYY/MM/DD");
+            this.isActive = 1;
+
+        }
+    }
+
+
+   async findById(uid) {
+        let sql = 'SELECT * FROM ' + this.tableName + ' WHERE uid=?;'
+        try {
+            const result = await super.executeSql(sql, [uid])
+            return result[0];
+        } catch (ex) {
+            throw ex
+        }
+    }
+
+    async update(username, uid, row) {
+        let columnValues = []
+        const columnNames = []
+
+        let sql = "UPDATE " + this.tableName + " SET "
+        
+
+        dbHelper.prepareUpdate(row, columnNames, columnValues)
+
+        columnNames.push(`updatedDate= '${row.updatedDate || dateHelper.getDateTimeNowUtc("YYYY/MM/DD")}'`)
+        columnNames.push('ts=?')
+        sql += columnNames.join(',')
+        sql += " WHERE uid = ?"
+        columnValues.push(dateHelper.getTimeStamp())
+        columnValues.push(uid)
+        try {
+            const result = await super.executeSql(sql, columnValues)
+            if (result.affectedRows > 0) {
+                return await this.findById(row.uid)
+            }
+            return undefined
+        } catch (ex) {
+            throw ex
+        }
+
+    }
+
+    async remove(uid){
+        let sql = 'delete  FROM ' + this.tableName + ' WHERE uid=?;'
+        try {
+            const result = await super.executeSql(sql, [uid])
+            return result[0];
+        } catch (ex) {
+            throw ex
+        }
+    }
+
+}
+module.exports = OrganizationTable
